@@ -1,4 +1,5 @@
 import 'package:expense_tracker_application/widgets/expenses_list/expenses_list.dart';
+import 'package:expense_tracker_application/widgets/new_expense.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker_application/models/expense.dart';
 import 'package:flutter/widgets.dart';
@@ -16,13 +17,47 @@ class _ExpensesState extends State<Expenses> {
     Expense(title: 'Cinema', amount: 15.69, date: DateTime.now(), category: Category.leisure),
   ];
 
+  void _addExpense(Expense expense) {
+    setState(() {
+      _registeredExpenses.add(expense);
+    });
+  }
+
+  void _removeExpense(Expense expense) {
+    final index = _registeredExpenses.indexOf(expense);
+    setState(() {
+      _registeredExpenses.remove(expense);
+    });
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Expense ${expense.title} deleted.'), duration: const Duration(seconds: 3), action: SnackBarAction(label: 'Undo', onPressed: () => setState(() {
+      _registeredExpenses.insert(index, expense);
+    })),));
+  }
+
+  void _openAddExpenseOverlay() {
+    showModalBottomSheet(isScrollControlled: true, context: context, builder: (context) => NewExpense(onAddExpense: _addExpense),);
+  }
+
   @override
   Widget build(BuildContext context) {
+    Widget mainContent = const Center(child: Text('No expenses added yet.'));
+
+    if (_registeredExpenses.isNotEmpty) {
+      mainContent = ExpensesList(expenses: _registeredExpenses, onRemoveExpense: _removeExpense,);
+    }
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Flutter Expense Tracker'),
+        actions: [
+          IconButton(
+            onPressed: _openAddExpenseOverlay,
+            icon: const Icon(Icons.add),),
+        ],
+      ),
       body: Column(
         children: [
           const Text("The chart"),
-          Expanded(child: ExpensesList(expenses: _registeredExpenses))
+          Expanded(child: mainContent)
         ],
       ),
     );
